@@ -3,273 +3,349 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>S360 VIP | Ultimate Admin Panel</title>
+    <title>S360 VIP - Pro Admin Terminal</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=JetBrains+Mono&display=swap" rel="stylesheet">
     <style>
-        body { background: #050505; color: #fff; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        .glass { background: rgba(15, 15, 20, 0.95); border: 1px solid rgba(0, 242, 255, 0.2); backdrop-filter: blur(10px); }
-        .neon-text { color: #00f2ff; text-shadow: 0 0 10px rgba(0, 242, 255, 0.5); }
-        .card { transition: 0.3s; border: 1px solid #222; }
-        .card:hover { border-color: #00f2ff; box-shadow: 0 0 20px rgba(0, 242, 255, 0.1); }
-        input, select, textarea { background: #111 !important; border: 1px solid #333 !important; color: #fff !important; }
-        input:focus { border-color: #00f2ff !important; outline: none; }
-        .loader { border: 4px solid #111; border-top: 4px solid #00f2ff; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        :root { --primary: #00e5ff; --bg: #0a0b10; }
+        body { font-family: 'Inter', sans-serif; background-color: var(--bg); color: #e2e8f0; }
+        .mono { font-family: 'JetBrains Mono', monospace; }
+        .glass { background: rgba(17, 18, 27, 0.8); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.05); }
+        .neon-glow { box-shadow: 0 0 15px rgba(0, 229, 255, 0.2); }
+        .input-field { background: #161821 !important; border: 1px solid #2d313f !important; color: #fff !important; transition: 0.3s; }
+        .input-field:focus { border-color: var(--primary) !important; box-shadow: 0 0 10px rgba(0, 229, 255, 0.1); outline: none; }
+        .btn-primary { background: linear-gradient(135deg, #00b4d8, #0077b6); transition: 0.3s; }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0, 180, 216, 0.4); }
+        .loader-spin { border-top-color: var(--primary); animation: spin 0.8s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 </head>
-<body class="min-h-screen">
+<body class="min-h-screen antialiased">
 
-    <!-- LOGIN SCREEN -->
-    <div id="login-screen" class="fixed inset-0 z-[9999] bg-black flex items-center justify-center p-6">
-        <div class="glass max-w-md w-full p-8 rounded-3xl text-center">
-            <h2 class="text-2xl font-bold neon-text mb-6">ADMIN AUTHENTICATION</h2>
-            <input type="password" id="login-pass" class="w-full p-4 rounded-xl text-center mb-4 tracking-[0.5em]" placeholder="ENTER PIN">
-            <button onclick="login()" class="w-full bg-cyan-600 hover:bg-cyan-500 py-4 rounded-xl font-bold transition">LOGIN</button>
-            <p id="login-err" class="text-red-500 mt-4 hidden">Access Denied!</p>
+    <!-- Auth Lock -->
+    <div id="authBox" class="fixed inset-0 z-[9999] bg-[#0a0b10] flex items-center justify-center p-6">
+        <div class="max-w-md w-full glass p-8 rounded-3xl text-center border-t-2 border-[#00e5ff]">
+            <div class="w-16 h-16 bg-[#00e5ff1a] rounded-2xl flex items-center justify-center mx-auto mb-6">
+                <i class="fas fa-shield-halved text-[#00e5ff] text-2xl"></i>
+            </div>
+            <h2 class="text-2xl font-extrabold mb-2 tracking-tight">SYSTEM ACCESS</h2>
+            <p class="text-gray-500 text-sm mb-8 font-medium">Please enter your secure terminal PIN</p>
+            <input type="password" id="pinInput" class="w-full input-field p-4 rounded-2xl text-center text-2xl tracking-[0.5em] mb-4" placeholder="••••">
+            <button onclick="unlock()" class="w-full btn-primary text-white font-bold py-4 rounded-2xl shadow-lg">INITIALIZE</button>
+            <p id="authError" class="text-red-500 mt-4 hidden text-sm font-bold">INVALID ACCESS KEY</p>
         </div>
     </div>
 
-    <!-- MAIN DASHBOARD -->
-    <div id="dashboard" class="hidden pb-20">
-        <nav class="p-4 glass sticky top-0 z-50 border-b border-cyan-500/30">
+    <!-- Main Content -->
+    <div id="app" class="hidden">
+        <!-- Navigation -->
+        <nav class="glass sticky top-0 z-[100] px-6 py-4 border-b border-white/5">
             <div class="container mx-auto flex justify-between items-center">
-                <div class="flex items-center gap-2">
-                    <span class="bg-cyan-500 text-black px-2 py-1 rounded font-black">S360</span>
-                    <h1 class="text-xl font-bold neon-text">VIP CONTROL</h1>
+                <div class="flex items-center gap-3">
+                    <div class="h-10 w-10 btn-primary rounded-xl flex items-center justify-center shadow-lg">
+                        <i class="fas fa-dragon text-white"></i>
+                    </div>
+                    <div>
+                        <h1 class="font-black text-lg leading-none tracking-tighter">DARK S360 <span class="text-[#00e5ff]">VIP</span></h1>
+                        <span class="text-[10px] text-gray-500 font-bold uppercase tracking-widest">Master Controller</span>
+                    </div>
                 </div>
-                <div class="flex gap-2">
-                    <button onclick="fetchData()" class="bg-gray-800 px-4 py-2 rounded-lg"><i class="fas fa-sync"></i></button>
-                    <button onclick="openModal()" class="bg-cyan-600 px-4 py-2 rounded-lg font-bold text-sm">ADD USER</button>
-                    <button onclick="saveOnline()" class="bg-green-600 px-6 py-2 rounded-lg font-bold text-sm">PUSH UPDATE</button>
+                <div class="flex items-center gap-3">
+                    <button onclick="fetchLatest()" class="h-10 w-10 flex items-center justify-center rounded-xl bg-white/5 hover:bg-white/10 transition">
+                        <i class="fas fa-sync-alt text-gray-400"></i>
+                    </button>
+                    <button onclick="openModal()" class="bg-white/5 hover:bg-white/10 px-5 py-2.5 rounded-xl text-sm font-bold transition">
+                        ADD USER
+                    </button>
+                    <button onclick="pushUpdate()" class="btn-primary px-6 py-2.5 rounded-xl text-sm font-black text-white shadow-xl">
+                        PUSH UPDATE
+                    </button>
                 </div>
             </div>
         </nav>
 
-        <div class="container mx-auto p-4 md:p-8">
-            <!-- App Config Editor -->
-            <div class="glass p-6 rounded-3xl mb-10 border-l-4 border-cyan-500">
-                <h3 class="neon-text font-bold mb-4 uppercase tracking-wider">App Configuration</h3>
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <div class="md:col-span-2">
-                        <label class="text-xs text-gray-500">Announcement Message</label>
-                        <textarea id="conf-ann" class="w-full p-3 rounded-xl mt-1 h-20 text-sm"></textarea>
+        <main class="container mx-auto px-6 py-10">
+            <!-- App Config Section -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 mb-12">
+                <div class="lg:col-span-8 glass p-8 rounded-[2rem]">
+                    <h3 class="text-sm font-bold text-gray-500 uppercase tracking-widest mb-6 flex items-center gap-2">
+                        <span class="w-2 h-2 bg-[#00e5ff] rounded-full"></span> App Configuration
+                    </h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="space-y-4">
+                            <div>
+                                <label class="text-xs font-bold text-gray-500 ml-1">ANNOUNCEMENT</label>
+                                <textarea id="cfg-ann" class="w-full input-field p-4 rounded-2xl mt-1 text-sm h-24"></textarea>
+                            </div>
+                            <div class="flex items-center justify-between p-4 bg-white/5 rounded-2xl">
+                                <span class="text-sm font-semibold">Status</span>
+                                <select id="cfg-ann-status" class="bg-transparent font-bold text-[#00e5ff] outline-none cursor-pointer">
+                                    <option value="on">ONLINE</option>
+                                    <option value="off">OFFLINE</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="text-xs font-bold text-gray-500 ml-1">MAINTENANCE MESSAGE</label>
+                                <textarea id="cfg-mmsg" class="w-full input-field p-4 rounded-2xl mt-1 text-sm h-24"></textarea>
+                            </div>
+                            <div class="flex items-center justify-between p-4 bg-white/5 rounded-2xl">
+                                <span class="text-sm font-semibold text-red-400">Maintenance Mode</span>
+                                <select id="cfg-maint" class="bg-transparent font-bold text-red-500 outline-none cursor-pointer">
+                                    <option value="false">LIVE</option>
+                                    <option value="true">ACTIVE</option>
+                                </select>
+                            </div>
+                        </div>
                     </div>
-                    <div class="md:col-span-2">
-                        <label class="text-xs text-gray-500">Maintenance Message</label>
-                        <textarea id="conf-mmsg" class="w-full p-3 rounded-xl mt-1 h-20 text-sm"></textarea>
+                </div>
+
+                <div class="lg:col-span-4 space-y-6">
+                    <div class="glass p-6 rounded-[2rem] border-l-4 border-[#00e5ff]">
+                        <p class="text-xs font-bold text-gray-500 mb-1">DATA SOURCE</p>
+                        <input type="text" id="currentPasteId" value="LGU5MbB1" class="w-full bg-transparent font-bold text-lg mono text-[#00e5ff] outline-none">
+                        <p class="text-[10px] text-gray-600 mt-2">Update this ID if you change files.</p>
                     </div>
-                    <div>
-                        <label class="text-xs text-gray-500">Maint. Mode</label>
-                        <select id="conf-maint" class="w-full p-3 rounded-xl mt-1">
-                            <option value="false">Live</option>
-                            <option value="true">Maintenance</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="text-xs text-gray-500">Announce Status</label>
-                        <select id="conf-ann-status" class="w-full p-3 rounded-xl mt-1">
-                            <option value="on">On</option>
-                            <option value="off">Off</option>
-                        </select>
-                    </div>
-                    <div class="md:col-span-2">
-                        <label class="text-xs text-gray-500">Paste ID (Change manually if needed)</label>
-                        <input type="text" id="paste-id" value="LGU5MbB1" class="w-full p-3 rounded-xl mt-1 font-mono text-cyan-400">
+                    <div class="glass p-6 rounded-[2rem]">
+                        <div class="flex justify-between items-center mb-4">
+                            <span class="text-xs font-bold text-gray-500">USER STATISTICS</span>
+                            <span id="userCount" class="px-3 py-1 bg-[#00e5ff1a] text-[#00e5ff] rounded-full text-xs font-black">0</span>
+                        </div>
+                        <div class="h-2 w-full bg-white/5 rounded-full overflow-hidden">
+                            <div id="statProgress" class="h-full btn-primary" style="width: 0%"></div>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Users Grid -->
-            <h3 class="text-xl font-bold mb-6 flex items-center gap-2">
-                <i class="fas fa-users text-cyan-500"></i> User Database
-                <span id="user-count" class="text-xs bg-gray-800 px-2 py-1 rounded text-cyan-400">0</span>
-            </h3>
-            <div id="user-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                <!-- Cards appear here -->
+            <!-- User Database Grid -->
+            <div class="flex justify-between items-end mb-6">
+                <h3 class="text-2xl font-black italic tracking-tighter">USER DATABASE</h3>
+                <div class="relative">
+                    <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-600"></i>
+                    <input type="text" oninput="searchUser(this.value)" placeholder="Search users..." class="input-field pl-12 pr-4 py-2.5 rounded-xl text-sm w-64">
+                </div>
             </div>
-        </div>
+
+            <div id="userGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                <!-- User Cards -->
+            </div>
+        </main>
     </div>
 
-    <!-- USER MODAL -->
-    <div id="modal" class="fixed inset-0 z-[10000] bg-black/90 hidden flex items-center justify-center p-4">
-        <div class="glass max-w-md w-full rounded-3xl overflow-hidden shadow-2xl">
-            <div class="p-6 border-b border-gray-800 flex justify-between">
-                <h3 id="modal-title" class="font-bold neon-text">ADD VIP USER</h3>
-                <button onclick="closeModal()" class="text-2xl text-gray-500 hover:text-white">&times;</button>
+    <!-- Modal User -->
+    <div id="userModal" class="fixed inset-0 z-[1000] bg-[#050505f2] backdrop-blur-md hidden flex items-center justify-center p-6">
+        <div class="max-w-md w-full glass rounded-[2.5rem] overflow-hidden shadow-2xl">
+            <div class="px-8 py-6 border-b border-white/5 flex justify-between items-center">
+                <h3 id="modalTitle" class="font-black tracking-tighter text-xl text-[#00e5ff]">ADD USER</h3>
+                <button onclick="closeModal()" class="text-gray-500 hover:text-white transition text-2xl">&times;</button>
             </div>
-            <div class="p-6 space-y-4">
-                <input type="hidden" id="edit-idx">
+            <div class="p-8 space-y-5">
+                <input type="hidden" id="editIdx">
                 <div class="grid grid-cols-2 gap-4">
-                    <input type="text" id="u-user" placeholder="Username" class="p-3 rounded-xl w-full">
-                    <input type="text" id="u-pass" placeholder="Password" class="p-3 rounded-xl w-full">
+                    <input type="text" id="u_name" placeholder="Username" class="w-full input-field p-4 rounded-2xl">
+                    <input type="text" id="u_pass" placeholder="Password" class="w-full input-field p-4 rounded-2xl">
                 </div>
                 <div class="grid grid-cols-2 gap-4">
-                    <select id="u-status" class="p-3 rounded-xl w-full">
+                    <select id="u_status" class="w-full input-field p-4 rounded-2xl">
                         <option value="active">Active</option>
                         <option value="blocked">Blocked</option>
                     </select>
-                    <input type="text" id="u-expiry" placeholder="Expiry: YYYY-MM-DD" class="p-3 rounded-xl w-full">
+                    <input type="text" id="u_exp" placeholder="YYYY-MM-DD" class="w-full input-field p-4 rounded-2xl">
                 </div>
-                <input type="text" id="u-device" placeholder="Device ID (ANY)" class="p-3 rounded-xl w-full">
-                <button onclick="saveUserLocal()" class="w-full bg-cyan-600 py-4 rounded-2xl font-bold transition mt-4">COMMIT TO LIST</button>
+                <input type="text" id="u_did" placeholder="Device ID (ANY)" class="w-full input-field p-4 rounded-2xl">
+                <button onclick="saveUser()" class="w-full btn-primary text-white font-black py-4 rounded-2xl shadow-xl mt-4">COMMIT CHANGES</button>
             </div>
         </div>
     </div>
 
-    <!-- LOADING SPINNER -->
-    <div id="loader" class="fixed inset-0 z-[10001] bg-black/80 hidden flex flex-col items-center justify-center">
-        <div class="loader mb-4"></div>
-        <p class="neon-text font-bold tracking-widest animate-pulse">TRANSMITTING DATA...</p>
+    <!-- Global Loader -->
+    <div id="loading" class="fixed inset-0 z-[10000] bg-black/90 hidden flex flex-col items-center justify-center">
+        <div class="w-12 h-12 border-4 border-white/5 loader-spin rounded-full mb-4"></div>
+        <p class="mono text-xs font-bold tracking-[0.3em] text-[#00e5ff]">SYNCING_DATA_STREAM</p>
     </div>
 
     <script>
-        const API_KEY = "KuBOD7AbDjnhSKrm9MxVqf3n48ZTWUx9";
-        const MASTER_PIN = "1234"; // আপনার লগইন পিন
-        let dataStore = { app_config: {}, users: [] };
+        const CONFIG = {
+            API_KEY: "KuBOD7AbDjnhSKrm9MxVqf3n48ZTWUx9",
+            MASTER_PIN: "1234",
+            INITIAL_ID: "LGU5MbB1"
+        };
 
-        function login() {
-            if(document.getElementById('login-pass').value === MASTER_PIN) {
-                document.getElementById('login-screen').classList.add('hidden');
-                document.getElementById('dashboard').classList.remove('hidden');
-                fetchData();
+        let rawData = { app_config: {}, users: [] };
+
+        // 🛡 Security
+        function unlock() {
+            const pin = document.getElementById('pinInput').value;
+            if(pin === CONFIG.MASTER_PIN) {
+                document.getElementById('authBox').style.display = 'none';
+                document.getElementById('app').classList.remove('hidden');
+                fetchLatest();
             } else {
-                document.getElementById('login-err').classList.remove('hidden');
+                document.getElementById('authError').classList.remove('hidden');
+                setTimeout(() => document.getElementById('authError').classList.add('hidden'), 2000);
             }
         }
 
-        async function fetchData() {
-            showLoader(true);
-            const pid = document.getElementById('paste-id').value;
+        // 📡 Data Fetching (Bug-free Proxy)
+        async function fetchLatest() {
+            toggleLoader(true);
+            const pid = document.getElementById('currentPasteId').value;
             try {
-                // Using corsproxy.io for better results
-                const res = await fetch(`https://corsproxy.io/?https://pastebin.com/raw/${pid}`);
-                dataStore = await res.json();
-                renderUI();
+                // Using AllOrigins for clean fetching
+                const res = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent('https://pastebin.com/raw/'+pid)}&ts=${Date.now()}`);
+                const wrapper = await res.json();
+                rawData = JSON.parse(wrapper.contents);
+                renderDashboard();
             } catch (e) {
-                alert("Error: Could not fetch data. Check your Paste ID.");
+                console.error(e);
+                alert("🔴 Fetch Error: JSON link may be broken or API limit reached.");
             }
-            showLoader(false);
+            toggleLoader(false);
         }
 
-        function renderUI() {
-            // App Config
-            document.getElementById('conf-ann').value = dataStore.app_config.announcement;
-            document.getElementById('conf-mmsg').value = dataStore.app_config.m_msg;
-            document.getElementById('conf-maint').value = dataStore.app_config.maintenance.toString();
-            document.getElementById('conf-ann-status').value = dataStore.app_config.announcement_status;
-            document.getElementById('user-count').innerText = dataStore.users.length;
+        // 🎨 UI Rendering
+        function renderDashboard() {
+            // Fill Configs
+            document.getElementById('cfg-ann').value = rawData.app_config.announcement;
+            document.getElementById('cfg-mmsg').value = rawData.app_config.m_msg;
+            document.getElementById('cfg-ann-status').value = rawData.app_config.announcement_status;
+            document.getElementById('cfg-maint').value = rawData.app_config.maintenance.toString();
+            
+            updateUserList(rawData.users);
+        }
 
-            // Users Grid
-            const grid = document.getElementById('user-grid');
+        function updateUserList(users) {
+            document.getElementById('userCount').innerText = users.length;
+            document.getElementById('statProgress').style.width = (Math.min(users.length, 100)) + '%';
+            
+            const grid = document.getElementById('userGrid');
             grid.innerHTML = '';
-            dataStore.users.forEach((u, i) => {
-                const color = u.status === 'active' ? 'text-green-400' : 'text-red-400';
-                grid.innerHTML += `
-                    <div class="glass p-5 rounded-2xl card relative">
+            
+            users.forEach((u, i) => {
+                const isActive = u.status === 'active';
+                const card = `
+                    <div class="glass p-6 rounded-[2rem] relative group border-b-4 ${isActive ? 'border-emerald-500/20' : 'border-red-500/20'} transition-all hover:border-[#00e5ff]">
                         <div class="flex justify-between items-start mb-4">
-                            <span class="text-[10px] font-bold px-2 py-1 bg-black rounded ${color}">${u.status.toUpperCase()}</span>
-                            <div class="flex gap-2 text-xs">
-                                <button onclick="editUser(${i})" class="text-cyan-500"><i class="fas fa-edit"></i></button>
-                                <button onclick="deleteUser(${i})" class="text-red-500"><i class="fas fa-trash"></i></button>
+                            <span class="text-[10px] font-black px-3 py-1 rounded-full ${isActive ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'} uppercase tracking-widest">${u.status}</span>
+                            <div class="flex gap-2">
+                                <button onclick="editUser(${i})" class="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center hover:bg-[#00e5ff1a] hover:text-[#00e5ff] transition"><i class="fas fa-edit text-xs"></i></button>
+                                <button onclick="deleteUser(${i})" class="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center hover:bg-red-500/10 hover:text-red-500 transition"><i class="fas fa-trash text-xs"></i></button>
                             </div>
                         </div>
-                        <h4 class="text-lg font-bold text-white mb-2">${u.user}</h4>
-                        <div class="text-[11px] font-mono text-gray-400 space-y-1 bg-black/50 p-3 rounded-lg border border-white/5">
-                            <p>PASSWORD: ${u.pass}</p>
-                            <p>EXPIRY: <span class="text-cyan-600">${u.expiry}</span></p>
-                            <p class="truncate">DEVICE: ${u.device_id}</p>
+                        <h4 class="font-bold text-lg mb-4 truncate">${u.user}</h4>
+                        <div class="space-y-2 mb-2 bg-black/20 p-4 rounded-2xl mono text-[11px]">
+                            <p class="flex justify-between"><span class="text-gray-600">PASS</span> <span>${u.pass}</span></p>
+                            <p class="flex justify-between"><span class="text-gray-600">EXP</span> <span class="text-[#00e5ff]">${u.expiry}</span></p>
+                            <p class="truncate text-gray-500"><i class="fas fa-microchip mr-1"></i> ${u.device_id}</p>
                         </div>
                     </div>
                 `;
+                grid.innerHTML += card;
             });
         }
 
-        function openModal() {
-            document.getElementById('edit-idx').value = "-1";
-            document.getElementById('modal-title').innerText = "ADD VIP USER";
-            document.querySelectorAll('#modal input').forEach(i => i.value = "");
-            document.getElementById('modal').classList.remove('hidden');
+        // 🔍 Search Logic
+        function searchUser(query) {
+            const filtered = rawData.users.filter(u => 
+                u.user.toLowerCase().includes(query.toLowerCase())
+            );
+            updateUserList(filtered);
         }
 
-        function closeModal() { document.getElementById('modal').classList.add('hidden'); }
+        // ✏️ CRUD Operations
+        function openModal() {
+            document.getElementById('editIdx').value = "-1";
+            document.getElementById('modalTitle').innerText = "ADD NEW VIP";
+            document.querySelectorAll('#userModal input').forEach(i => i.value = "");
+            document.getElementById('userModal').classList.remove('hidden');
+        }
+
+        function closeModal() { document.getElementById('userModal').classList.add('hidden'); }
 
         function editUser(i) {
-            const u = dataStore.users[i];
-            document.getElementById('edit-idx').value = i;
-            document.getElementById('modal-title').innerText = "EDIT USER PROFILE";
-            document.getElementById('u-user').value = u.user;
-            document.getElementById('u-pass').value = u.pass;
-            document.getElementById('u-status').value = u.status;
-            document.getElementById('u-expiry').value = u.expiry;
-            document.getElementById('u-device').value = u.device_id;
-            document.getElementById('modal').classList.remove('hidden');
+            const u = rawData.users[i];
+            document.getElementById('editIdx').value = i;
+            document.getElementById('modalTitle').innerText = "EDIT VIP DATA";
+            document.getElementById('u_name').value = u.user;
+            document.getElementById('u_pass').value = u.pass;
+            document.getElementById('u_status').value = u.status;
+            document.getElementById('u_exp').value = u.expiry;
+            document.getElementById('u_did').value = u.device_id;
+            document.getElementById('userModal').classList.remove('hidden');
+        }
+
+        function saveUser() {
+            const i = document.getElementById('editIdx').value;
+            const uObj = {
+                user: document.getElementById('u_name').value,
+                pass: document.getElementById('u_pass').value,
+                status: document.getElementById('u_status').value,
+                expiry: document.getElementById('u_exp').value,
+                device_id: document.getElementById('u_did').value
+            };
+
+            if(i === "-1") rawData.users.unshift(uObj);
+            else rawData.users[i] = uObj;
+
+            closeModal();
+            renderDashboard();
         }
 
         function deleteUser(i) {
-            if(confirm("Confirm removal of this user?")) {
-                dataStore.users.splice(i, 1);
-                renderUI();
+            if(confirm("Confirm deletion? This only affects the local list until you push update.")) {
+                rawData.users.splice(i, 1);
+                renderDashboard();
             }
         }
 
-        function saveUserLocal() {
-            const i = document.getElementById('edit-idx').value;
-            const uData = {
-                user: document.getElementById('u-user').value,
-                pass: document.getElementById('u-pass').value,
-                status: document.getElementById('u-status').value,
-                expiry: document.getElementById('u-expiry').value,
-                device_id: document.getElementById('u-device').value
-            };
-            if(i === "-1") dataStore.users.unshift(uData);
-            else dataStore.users[i] = uData;
-            closeModal();
-            renderUI();
-        }
+        // 📤 SYNC ONLINE (High-Performance Method)
+        async function pushUpdate() {
+            if(!confirm("Pushing changes will create a new Database Version. Continue?")) return;
+            
+            toggleLoader(true);
 
-        async function saveOnline() {
-            if(!confirm("Push changes to Pastebin? This will create a NEW ID.")) return;
-            showLoader(true);
+            // Local State Sync
+            rawData.app_config.announcement = document.getElementById('cfg-ann').value;
+            rawData.app_config.m_msg = document.getElementById('cfg-mmsg').value;
+            rawData.app_config.announcement_status = document.getElementById('cfg-ann-status').value;
+            rawData.app_config.maintenance = document.getElementById('cfg-maint').value === 'true';
 
-            // Sync config inputs
-            dataStore.app_config.announcement = document.getElementById('conf-ann').value;
-            dataStore.app_config.m_msg = document.getElementById('conf-mmsg').value;
-            dataStore.app_config.maintenance = document.getElementById('conf-maint').value === 'true';
-            dataStore.app_config.announcement_status = document.getElementById('conf-ann-status').value;
-
-            const params = new URLSearchParams();
-            params.append('api_dev_key', API_KEY);
-            params.append('api_option', 'paste');
-            params.append('api_paste_code', JSON.stringify(dataStore, null, 2));
-            params.append('api_paste_name', 'S360_VIP_CONFIG');
-            params.append('api_paste_format', 'json');
-            params.append('api_paste_private', '0'); // Public
+            const payload = new URLSearchParams();
+            payload.append('api_dev_key', CONFIG.API_KEY);
+            payload.append('api_option', 'paste');
+            payload.append('api_paste_code', JSON.stringify(rawData, null, 2));
+            payload.append('api_paste_name', 'S360_VIP_DATABASE');
+            payload.append('api_paste_format', 'json');
+            payload.append('api_paste_private', '0');
 
             try {
-                // Post to Pastebin via corsproxy.io
+                // Using corsproxy.io for POST requests (Stable)
                 const response = await fetch('https://corsproxy.io/?' + encodeURIComponent('https://pastebin.com/api/api_post.php'), {
                     method: 'POST',
-                    body: params
+                    body: payload
                 });
 
                 const result = await response.text();
                 
                 if(result.includes('https://pastebin.com/')) {
-                    const newID = result.split('/').pop();
-                    alert("✅ UPDATE SUCCESSFUL!\nNew Paste ID: " + newID);
-                    document.getElementById('paste-id').value = newID;
-                    renderUI();
+                    const newId = result.split('/').pop();
+                    alert("🚀 SUCCESS! \nDATABASE UPDATED. \nNew ID: " + newId);
+                    document.getElementById('currentPasteId').value = newId;
                 } else {
-                    alert("Pastebin Response: " + result);
+                    alert("⚠️ ERROR FROM PASTEBIN: " + result);
                 }
             } catch (err) {
-                alert("Fatal Error: Could not reach the server.");
+                alert("🔴 NETWORK ERROR: Unable to push data. Check your internet.");
             }
-            showLoader(false);
+            toggleLoader(false);
         }
 
-        function showLoader(s) { document.getElementById('loader').classList.toggle('hidden', !s); }
+        function toggleLoader(show) {
+            document.getElementById('loading').classList.toggle('hidden', !show);
+        }
     </script>
 </body>
 </html>
