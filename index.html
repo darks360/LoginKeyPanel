@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dark S360 - Realtime Admin Panel</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .loader { border-top-color: #3498db; animation: spinner 1.5s linear infinite; }
+        @keyframes spinner { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-100 font-sans">
+
+    <!-- Header -->
+    <header class="bg-blue-700 p-4 shadow-2xl sticky top-0 z-50">
+        <div class="container mx-auto flex justify-between items-center">
+            <h1 id="app-title" class="text-2xl font-black tracking-tighter">⚡ DARK S360 VIP</h1>
+            <div class="flex gap-3">
+                <button onclick="openModal('userModal')" class="bg-green-500 hover:bg-green-600 px-4 py-2 rounded-lg font-bold transition flex items-center gap-2">
+                    <i class="fas fa-user-plus"></i> Add User
+                </button>
+                <button onclick="saveToPastebin()" id="saveBtn" class="bg-red-500 hover:bg-red-600 px-4 py-2 rounded-lg font-bold transition flex items-center gap-2">
+                    <i class="fas fa-cloud-upload-alt"></i> Save All
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <div class="container mx-auto p-4 lg:p-8">
+        
+        <!-- Setup Section -->
+        <div class="bg-gray-800 p-6 rounded-2xl shadow-lg mb-8 border border-gray-700">
+            <h2 class="text-sm font-bold text-blue-400 mb-4 uppercase">Pastebin API Configuration</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <input type="password" id="apiKey" class="bg-gray-700 border border-gray-600 p-3 rounded-lg w-full" placeholder="API Dev Key">
+                <input type="text" id="pasteId" class="bg-gray-700 border border-gray-600 p-3 rounded-lg w-full" placeholder="Paste ID (e.g. bXyz123)">
+                <button onclick="loadData()" class="bg-blue-600 hover:bg-blue-500 p-3 rounded-lg font-bold">Load Data</button>
+            </div>
+            <p class="text-xs text-gray-400 mt-2">* Your API Key is safe, it's only used in your browser.</p>
+        </div>
+
+        <!-- User Cards Grid -->
+        <div id="userGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <!-- Cards will appear here -->
+            <div class="col-span-full text-center py-20 text-gray-500">
+                <i class="fas fa-database text-6xl mb-4"></i>
+                <p>Enter API Details and click Load Data</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- User Modal -->
+    <div id="userModal" class="fixed inset-0 bg-black bg-opacity-80 hidden flex items-center justify-center p-4 z-[100]">
+        <div class="bg-gray-800 rounded-2xl shadow-2xl w-full max-w-md border border-gray-700 overflow-hidden">
+            <div class="bg-blue-700 p-4 font-bold flex justify-between items-center">
+                <span id="modalTitle">Add New User</span>
+                <button onclick="closeModal('userModal')" class="text-2xl">&times;</button>
+            </div>
+            <div class="p-6 space-y-4">
+                <input type="hidden" id="editIndex">
+                <div>
+                    <label class="text-xs font-bold text-gray-400 uppercase">Username</label>
+                    <input type="text" id="m_user" class="w-full bg-gray-700 border border-gray-600 p-2 rounded mt-1">
+                </div>
+                <div>
+                    <label class="text-xs font-bold text-gray-400 uppercase">Password</label>
+                    <input type="text" id="m_pass" class="w-full bg-gray-700 border border-gray-600 p-2 rounded mt-1">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="text-xs font-bold text-gray-400 uppercase">Status</label>
+                        <select id="m_status" class="w-full bg-gray-700 border border-gray-600 p-2 rounded mt-1 text-white">
+                            <option value="active">Active</option>
+                            <option value="blocked">Blocked</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-xs font-bold text-gray-400 uppercase">Expiry Date</label>
+                        <input type="text" id="m_expiry" class="w-full bg-gray-700 border border-gray-600 p-2 rounded mt-1" placeholder="YYYY-MM-DD">
+                    </div>
+                </div>
+                <div>
+                    <label class="text-xs font-bold text-gray-400 uppercase">Device ID</label>
+                    <input type="text" id="m_device" class="w-full bg-gray-700 border border-gray-600 p-2 rounded mt-1">
+                </div>
+                <button onclick="submitUserForm()" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-bold transition mt-4 shadow-lg">
+                    CONFIRM & SAVE
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="fixed inset-0 bg-black bg-opacity-70 hidden flex flex-col items-center justify-center z-[200]">
+        <div class="loader ease-linear rounded-full border-4 border-t-4 border-gray-200 h-12 w-12 mb-4"></div>
+        <h2 class="text-xl font-bold">Processing... Please wait</h2>
+    </div>
+
+    <script>
+        let fullData = { app_config: {}, users: [] };
+        
+        // Fetch Data from Pastebin
+        async function loadData() {
+            const pasteId = document.getElementById('pasteId').value;
+            if(!pasteId) return alert("Please enter Paste ID");
+
+            toggleLoader(true);
+            try {
+                const response = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent('https://pastebin.com/raw/' + pasteId)}`);
+                const result = await response.json();
+                fullData = JSON.parse(result.contents);
+                
+                document.getElementById('app-title').innerText = fullData.app_config.title;
+                renderUsers();
+            } catch (error) {
+                alert("Error: Could not load JSON. Check Paste ID.");
+            }
+            toggleLoader(false);
+        }
+
+        // Render User Cards
+        function renderUsers() {
+            const grid = document.getElementById('userGrid');
+            grid.innerHTML = '';
+
+            fullData.users.forEach((user, index) => {
+                const statusColor = user.status === 'active' ? 'text-green-400 bg-green-900/30' : 'text-red-400 bg-red-900/30';
+                const card = `
+                    <div class="bg-gray-800 rounded-2xl p-5 border border-gray-700 shadow-lg hover:border-blue-500 transition duration-300">
+                        <div class="flex justify-between items-start mb-4">
+                            <div>
+                                <h3 class="text-lg font-bold text-white">${user.user}</h3>
+                                <span class="px-2 py-0.5 rounded text-[10px] font-black uppercase ${statusColor}">${user.status}</span>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Expiry</p>
+                                <p class="text-xs font-mono text-blue-300">${user.expiry}</p>
+                            </div>
+                        </div>
+                        <div class="bg-gray-900/50 p-3 rounded-lg mb-4 space-y-1">
+                            <p class="text-xs text-gray-400 font-mono"><span class="text-gray-600">PASS:</span> ${user.pass}</p>
+                            <p class="text-xs text-gray-400 font-mono truncate"><span class="text-gray-600">DID:</span> ${user.device_id}</p>
+                        </div>
+                        <div class="flex gap-2">
+                            <button onclick="editUser(${index})" class="flex-1 bg-gray-700 hover:bg-blue-600 py-2 rounded-lg text-xs font-bold transition">EDIT</button>
+                            <button onclick="deleteUser(${index})" class="flex-1 bg-gray-700 hover:bg-red-600 py-2 rounded-lg text-xs font-bold transition">DELETE</button>
+                        </div>
+                    </div>
+                `;
+                grid.innerHTML += card;
+            });
+        }
+
+        // Add/Edit Functions
+        function openModal(id) {
+            document.getElementById(id).classList.remove('hidden');
+            document.getElementById('editIndex').value = "-1";
+            if(id === 'userModal') document.getElementById('modalTitle').innerText = "Add New User";
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).classList.add('hidden');
+        }
+
+        function editUser(index) {
+            const u = fullData.users[index];
+            document.getElementById('m_user').value = u.user;
+            document.getElementById('m_pass').value = u.pass;
+            document.getElementById('m_status').value = u.status;
+            document.getElementById('m_expiry').value = u.expiry;
+            document.getElementById('m_device').value = u.device_id;
+            document.getElementById('editIndex').value = index;
+            document.getElementById('modalTitle').innerText = "Edit User";
+            openModal('userModal');
+        }
+
+        function deleteUser(index) {
+            if(confirm('Delete this user? Changes won\'t be permanent until you click SAVE ALL.')) {
+                fullData.users.splice(index, 1);
+                renderUsers();
+            }
+        }
+
+        function submitUserForm() {
+            const index = document.getElementById('editIndex').value;
+            const newUser = {
+                user: document.getElementById('m_user').value,
+                pass: document.getElementById('m_pass').value,
+                status: document.getElementById('m_status').value,
+                expiry: document.getElementById('m_expiry').value,
+                device_id: document.getElementById('m_device').value
+            };
+
+            if(index == "-1") fullData.users.unshift(newUser);
+            else fullData.users[index] = newUser;
+
+            closeModal('userModal');
+            renderUsers();
+        }
+
+        // SAVE TO PASTEBIN (The Critical Part)
+        async function saveToPastebin() {
+            const devKey = document.getElementById('apiKey').value;
+            if(!devKey) return alert("Enter your Pastebin API Dev Key first!");
+
+            if(!confirm("Are you sure? This will update the online JSON file!")) return;
+
+            toggleLoader(true);
+
+            // Pastebin API logic
+            const formData = new URLSearchParams();
+            formData.append('api_dev_key', devKey);
+            formData.append('api_option', 'paste'); // Creating new paste is easier for real-time
+            formData.append('api_paste_code', JSON.stringify(fullData, null, 2));
+            formData.append('api_paste_name', 'DarkS360_Config_Update');
+            formData.append('api_paste_format', 'json');
+            formData.append('api_paste_private', '0'); // Public
+
+            try {
+                // Using a proxy to bypass CORS
+                const response = await fetch('https://cors-anywhere.herokuapp.com/https://pastebin.com/api/api_post.php', {
+                    method: 'POST',
+                    body: formData,
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+                });
+
+                const result = await response.text();
+                
+                if(result.includes('https://pastebin.com/')) {
+                    const newId = result.split('/').pop();
+                    alert("✅ SUCCESS!\nNew Paste ID: " + newId + "\nUpdate your App/Script with this ID.");
+                    document.getElementById('pasteId').value = newId;
+                } else {
+                    alert("❌ ERROR: " + result);
+                }
+            } catch (e) {
+                alert("Connection Error. Please check if CORS Proxy is working.");
+            }
+            toggleLoader(false);
+        }
+
+        function toggleLoader(show) {
+            document.getElementById('loadingOverlay').classList.toggle('hidden', !show);
+        }
+    </script>
+</body>
+</html>
