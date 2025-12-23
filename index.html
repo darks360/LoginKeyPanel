@@ -3,247 +3,305 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dark S360 - Realtime Admin Panel</title>
+    <title>Dark S360 - Admin Control Panel</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        .loader { border-top-color: #3498db; animation: spinner 1.5s linear infinite; }
-        @keyframes spinner { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        body { background-color: #0f172a; color: #e2e8f0; }
+        .glass { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); }
+        .status-active { color: #4ade80; background: rgba(74, 222, 128, 0.1); }
+        .status-blocked { color: #f87171; background: rgba(248, 113, 113, 0.1); }
+        .loader { border-top-color: #3b82f6; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
-<body class="bg-gray-900 text-gray-100 font-sans">
+<body class="min-h-screen pb-10">
 
     <!-- Header -->
-    <header class="bg-blue-700 p-4 shadow-2xl sticky top-0 z-50">
+    <header class="glass sticky top-0 z-50 p-4 mb-6 shadow-2xl border-b border-blue-500/30">
         <div class="container mx-auto flex justify-between items-center">
-            <h1 id="app-title" class="text-2xl font-black tracking-tighter">⚡ DARK S360 VIP</h1>
-            <div class="flex gap-3">
-                <button onclick="openModal('userModal')" class="bg-green-500 hover:bg-green-600 px-4 py-2 rounded-lg font-bold transition flex items-center gap-2">
-                    <i class="fas fa-user-plus"></i> Add User
+            <div class="flex items-center gap-3">
+                <div class="bg-blue-600 p-2 rounded-lg shadow-lg shadow-blue-500/50">
+                    <i class="fas fa-user-shield text-xl"></i>
+                </div>
+                <h1 id="brand-title" class="text-xl font-black italic tracking-widest text-white">⚡ DARK S360 VIP ⚡</h1>
+            </div>
+            <div class="flex gap-2">
+                <button onclick="openUserModal()" class="bg-blue-600 hover:bg-blue-500 px-4 py-2 rounded-lg font-bold text-sm transition">
+                    <i class="fas fa-plus mr-1"></i> ADD USER
                 </button>
-                <button onclick="saveToPastebin()" id="saveBtn" class="bg-red-500 hover:bg-red-600 px-4 py-2 rounded-lg font-bold transition flex items-center gap-2">
-                    <i class="fas fa-cloud-upload-alt"></i> Save All
+                <button onclick="saveAllToPastebin()" class="bg-green-600 hover:bg-green-500 px-4 py-2 rounded-lg font-bold text-sm transition shadow-lg shadow-green-500/20">
+                    <i class="fas fa-save mr-1"></i> SAVE ONLINE
                 </button>
             </div>
         </div>
     </header>
 
-    <div class="container mx-auto p-4 lg:p-8">
+    <div class="container mx-auto px-4">
         
-        <!-- Setup Section -->
-        <div class="bg-gray-800 p-6 rounded-2xl shadow-lg mb-8 border border-gray-700">
-            <h2 class="text-sm font-bold text-blue-400 mb-4 uppercase">Pastebin API Configuration</h2>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <input type="password" id="apiKey" class="bg-gray-700 border border-gray-600 p-3 rounded-lg w-full" placeholder="API Dev Key">
-                <input type="text" id="pasteId" class="bg-gray-700 border border-gray-600 p-3 rounded-lg w-full" placeholder="Paste ID (e.g. bXyz123)">
-                <button onclick="loadData()" class="bg-blue-600 hover:bg-blue-500 p-3 rounded-lg font-bold">Load Data</button>
+        <!-- API Setup -->
+        <div class="glass p-6 rounded-2xl mb-8 flex flex-wrap gap-4 items-end justify-center lg:justify-start">
+            <div class="flex-1 min-w-[250px]">
+                <label class="block text-xs font-bold text-blue-400 mb-2 uppercase tracking-widest">Pastebin API Dev Key</label>
+                <input type="password" id="apiKey" class="w-full bg-slate-900 border border-slate-700 p-3 rounded-xl focus:border-blue-500 outline-none" placeholder="Paste your API Key here">
             </div>
-            <p class="text-xs text-gray-400 mt-2">* Your API Key is safe, it's only used in your browser.</p>
+            <div class="w-40">
+                <label class="block text-xs font-bold text-blue-400 mb-2 uppercase tracking-widest">Current Paste ID</label>
+                <input type="text" id="pasteId" value="LGU5MbB1" class="w-full bg-slate-900 border border-slate-700 p-3 rounded-xl focus:border-blue-500 outline-none">
+            </div>
+            <button onclick="fetchData()" class="bg-slate-700 hover:bg-slate-600 px-6 py-3 rounded-xl font-bold transition">
+                <i class="fas fa-sync-alt"></i> LOAD
+            </button>
         </div>
 
-        <!-- User Cards Grid -->
-        <div id="userGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            <!-- Cards will appear here -->
-            <div class="col-span-full text-center py-20 text-gray-500">
-                <i class="fas fa-database text-6xl mb-4"></i>
-                <p>Enter API Details and click Load Data</p>
+        <!-- App Config Section -->
+        <div class="glass p-6 rounded-2xl mb-10 border-l-4 border-yellow-500">
+            <h2 class="text-lg font-bold mb-4 flex items-center gap-2"><i class="fas fa-cog text-yellow-500"></i> App Global Settings</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div>
+                    <label class="text-xs font-bold text-gray-400 uppercase">Announcement Text</label>
+                    <textarea id="conf_ann" class="w-full bg-slate-900 border border-slate-700 p-2 rounded mt-1 text-sm h-20"></textarea>
+                </div>
+                <div>
+                    <label class="text-xs font-bold text-gray-400 uppercase">Maintenance Message</label>
+                    <textarea id="conf_msg" class="w-full bg-slate-900 border border-slate-700 p-2 rounded mt-1 text-sm h-20"></textarea>
+                </div>
+                <div class="space-y-4">
+                    <div class="flex items-center justify-between bg-slate-800 p-3 rounded-lg">
+                        <span class="text-sm font-bold">Maintenance Mode</span>
+                        <select id="conf_maint" class="bg-slate-900 text-xs p-1 rounded">
+                            <option value="false">OFF (Live)</option>
+                            <option value="true">ON (Blocked)</option>
+                        </select>
+                    </div>
+                    <div class="flex items-center justify-between bg-slate-800 p-3 rounded-lg">
+                        <span class="text-sm font-bold">Announcement Status</span>
+                        <select id="conf_ann_status" class="bg-slate-900 text-xs p-1 rounded">
+                            <option value="on">Visible</option>
+                            <option value="off">Hidden</option>
+                        </select>
+                    </div>
+                </div>
             </div>
+        </div>
+
+        <!-- User Management -->
+        <div class="mb-6 flex justify-between items-center">
+            <h2 class="text-2xl font-black text-white italic">USER DATABASE</h2>
+            <span id="userCount" class="bg-blue-600 text-xs font-bold px-3 py-1 rounded-full">0 Users</span>
+        </div>
+
+        <div id="userGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <!-- Cards will be injected here -->
         </div>
     </div>
 
     <!-- User Modal -->
-    <div id="userModal" class="fixed inset-0 bg-black bg-opacity-80 hidden flex items-center justify-center p-4 z-[100]">
-        <div class="bg-gray-800 rounded-2xl shadow-2xl w-full max-w-md border border-gray-700 overflow-hidden">
-            <div class="bg-blue-700 p-4 font-bold flex justify-between items-center">
-                <span id="modalTitle">Add New User</span>
-                <button onclick="closeModal('userModal')" class="text-2xl">&times;</button>
+    <div id="userModal" class="fixed inset-0 bg-black/90 hidden flex items-center justify-center p-4 z-[100] backdrop-blur-sm">
+        <div class="glass w-full max-w-md rounded-3xl overflow-hidden border border-blue-500/30">
+            <div class="bg-blue-600 p-5 flex justify-between items-center">
+                <h3 id="modalTitle" class="font-black italic">ADD NEW USER</h3>
+                <button onclick="closeModal()" class="text-2xl">&times;</button>
             </div>
-            <div class="p-6 space-y-4">
+            <div class="p-8 space-y-4">
                 <input type="hidden" id="editIndex">
-                <div>
-                    <label class="text-xs font-bold text-gray-400 uppercase">Username</label>
-                    <input type="text" id="m_user" class="w-full bg-gray-700 border border-gray-600 p-2 rounded mt-1">
-                </div>
-                <div>
-                    <label class="text-xs font-bold text-gray-400 uppercase">Password</label>
-                    <input type="text" id="m_pass" class="w-full bg-gray-700 border border-gray-600 p-2 rounded mt-1">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="text-[10px] font-bold text-blue-400 uppercase">Username</label>
+                        <input type="text" id="u_name" class="w-full bg-slate-900 border border-slate-700 p-3 rounded-xl mt-1">
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-bold text-blue-400 uppercase">Password</label>
+                        <input type="text" id="u_pass" class="w-full bg-slate-900 border border-slate-700 p-3 rounded-xl mt-1">
+                    </div>
                 </div>
                 <div class="grid grid-cols-2 gap-4">
                     <div>
-                        <label class="text-xs font-bold text-gray-400 uppercase">Status</label>
-                        <select id="m_status" class="w-full bg-gray-700 border border-gray-600 p-2 rounded mt-1 text-white">
+                        <label class="text-[10px] font-bold text-blue-400 uppercase">Status</label>
+                        <select id="u_status" class="w-full bg-slate-900 border border-slate-700 p-3 rounded-xl mt-1">
                             <option value="active">Active</option>
                             <option value="blocked">Blocked</option>
                         </select>
                     </div>
                     <div>
-                        <label class="text-xs font-bold text-gray-400 uppercase">Expiry Date</label>
-                        <input type="text" id="m_expiry" class="w-full bg-gray-700 border border-gray-600 p-2 rounded mt-1" placeholder="YYYY-MM-DD">
+                        <label class="text-[10px] font-bold text-blue-400 uppercase">Expiry (YYYY-MM-DD)</label>
+                        <input type="text" id="u_expiry" class="w-full bg-slate-900 border border-slate-700 p-3 rounded-xl mt-1">
                     </div>
                 </div>
                 <div>
-                    <label class="text-xs font-bold text-gray-400 uppercase">Device ID</label>
-                    <input type="text" id="m_device" class="w-full bg-gray-700 border border-gray-600 p-2 rounded mt-1">
+                    <label class="text-[10px] font-bold text-blue-400 uppercase">Device ID (ANY / ID)</label>
+                    <input type="text" id="u_device" class="w-full bg-slate-900 border border-slate-700 p-3 rounded-xl mt-1">
                 </div>
-                <button onclick="submitUserForm()" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-bold transition mt-4 shadow-lg">
-                    CONFIRM & SAVE
+                <button onclick="saveUserLocal()" class="w-full bg-blue-600 hover:bg-blue-500 py-4 rounded-2xl font-black transition shadow-xl shadow-blue-500/20">
+                    SAVE TO LIST
                 </button>
             </div>
         </div>
     </div>
 
-    <!-- Loading Overlay -->
-    <div id="loadingOverlay" class="fixed inset-0 bg-black bg-opacity-70 hidden flex flex-col items-center justify-center z-[200]">
-        <div class="loader ease-linear rounded-full border-4 border-t-4 border-gray-200 h-12 w-12 mb-4"></div>
-        <h2 class="text-xl font-bold">Processing... Please wait</h2>
+    <!-- Loader -->
+    <div id="loading" class="fixed inset-0 bg-black/80 hidden flex-col items-center justify-center z-[200]">
+        <div class="loader w-16 h-16 border-4 border-slate-700 rounded-full mb-4"></div>
+        <p class="font-bold tracking-widest animate-pulse">SYNCING DATA...</p>
     </div>
 
     <script>
-        let fullData = { app_config: {}, users: [] };
-        
-        // Fetch Data from Pastebin
-        async function loadData() {
-            const pasteId = document.getElementById('pasteId').value;
-            if(!pasteId) return alert("Please enter Paste ID");
+        let mainData = { app_config: {}, users: [] };
 
-            toggleLoader(true);
+        async function fetchData() {
+            const pid = document.getElementById('pasteId').value;
+            showLoading(true);
             try {
-                const response = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent('https://pastebin.com/raw/' + pasteId)}`);
-                const result = await response.json();
-                fullData = JSON.parse(result.contents);
+                const res = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent('https://pastebin.com/raw/' + pid)}&_=${new Date().getTime()}`);
+                const jsonRes = await res.json();
+                mainData = JSON.parse(jsonRes.contents);
                 
-                document.getElementById('app-title').innerText = fullData.app_config.title;
+                loadAppConfig();
                 renderUsers();
-            } catch (error) {
-                alert("Error: Could not load JSON. Check Paste ID.");
+            } catch (e) {
+                alert("Error fetching data! Please check Paste ID.");
             }
-            toggleLoader(false);
+            showLoading(false);
         }
 
-        // Render User Cards
+        function loadAppConfig() {
+            document.getElementById('brand-title').innerText = mainData.app_config.title;
+            document.getElementById('conf_ann').value = mainData.app_config.announcement;
+            document.getElementById('conf_msg').value = mainData.app_config.m_msg;
+            document.getElementById('conf_maint').value = mainData.app_config.maintenance.toString();
+            document.getElementById('conf_ann_status').value = mainData.app_config.announcement_status;
+        }
+
         function renderUsers() {
             const grid = document.getElementById('userGrid');
             grid.innerHTML = '';
+            document.getElementById('userCount').innerText = `${mainData.users.length} Users`;
 
-            fullData.users.forEach((user, index) => {
-                const statusColor = user.status === 'active' ? 'text-green-400 bg-green-900/30' : 'text-red-400 bg-red-900/30';
-                const card = `
-                    <div class="bg-gray-800 rounded-2xl p-5 border border-gray-700 shadow-lg hover:border-blue-500 transition duration-300">
+            mainData.users.forEach((u, i) => {
+                const statusClass = u.status === 'active' ? 'status-active' : 'status-blocked';
+                grid.innerHTML += `
+                    <div class="glass p-5 rounded-2xl relative overflow-hidden group border-t-2 ${u.status === 'active' ? 'border-blue-500' : 'border-red-500'}">
                         <div class="flex justify-between items-start mb-4">
                             <div>
-                                <h3 class="text-lg font-bold text-white">${user.user}</h3>
-                                <span class="px-2 py-0.5 rounded text-[10px] font-black uppercase ${statusColor}">${user.status}</span>
+                                <h4 class="font-black text-lg text-white">${u.user}</h4>
+                                <span class="text-[10px] px-2 py-0.5 rounded font-bold uppercase ${statusClass}">${u.status}</span>
                             </div>
-                            <div class="text-right">
-                                <p class="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Expiry</p>
-                                <p class="text-xs font-mono text-blue-300">${user.expiry}</p>
-                            </div>
+                            <i class="fas fa-user-circle text-3xl text-slate-700"></i>
                         </div>
-                        <div class="bg-gray-900/50 p-3 rounded-lg mb-4 space-y-1">
-                            <p class="text-xs text-gray-400 font-mono"><span class="text-gray-600">PASS:</span> ${user.pass}</p>
-                            <p class="text-xs text-gray-400 font-mono truncate"><span class="text-gray-600">DID:</span> ${user.device_id}</p>
+                        <div class="space-y-2 text-xs text-slate-400 font-mono bg-black/30 p-3 rounded-lg mb-4">
+                            <p><span class="text-blue-500">KEY:</span> ${u.pass}</p>
+                            <p><span class="text-blue-500">EXP:</span> ${u.expiry}</p>
+                            <p class="truncate"><span class="text-blue-500">DID:</span> ${u.device_id}</p>
                         </div>
                         <div class="flex gap-2">
-                            <button onclick="editUser(${index})" class="flex-1 bg-gray-700 hover:bg-blue-600 py-2 rounded-lg text-xs font-bold transition">EDIT</button>
-                            <button onclick="deleteUser(${index})" class="flex-1 bg-gray-700 hover:bg-red-600 py-2 rounded-lg text-xs font-bold transition">DELETE</button>
+                            <button onclick="editUser(${i})" class="flex-1 bg-slate-800 hover:bg-blue-600 py-2 rounded-lg font-bold transition">EDIT</button>
+                            <button onclick="deleteUser(${i})" class="bg-slate-800 hover:bg-red-600 p-2 rounded-lg transition text-red-400 hover:text-white">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
                         </div>
                     </div>
                 `;
-                grid.innerHTML += card;
             });
         }
 
-        // Add/Edit Functions
-        function openModal(id) {
-            document.getElementById(id).classList.remove('hidden');
+        function openUserModal() {
             document.getElementById('editIndex').value = "-1";
-            if(id === 'userModal') document.getElementById('modalTitle').innerText = "Add New User";
+            document.getElementById('modalTitle').innerText = "ADD NEW USER";
+            document.querySelectorAll('#userModal input').forEach(i => i.value = "");
+            document.getElementById('u_status').value = "active";
+            document.getElementById('userModal').classList.remove('hidden');
         }
 
-        function closeModal(id) {
-            document.getElementById(id).classList.add('hidden');
+        function closeModal() {
+            document.getElementById('userModal').classList.add('hidden');
         }
 
-        function editUser(index) {
-            const u = fullData.users[index];
-            document.getElementById('m_user').value = u.user;
-            document.getElementById('m_pass').value = u.pass;
-            document.getElementById('m_status').value = u.status;
-            document.getElementById('m_expiry').value = u.expiry;
-            document.getElementById('m_device').value = u.device_id;
-            document.getElementById('editIndex').value = index;
-            document.getElementById('modalTitle').innerText = "Edit User";
-            openModal('userModal');
+        function editUser(i) {
+            const u = mainData.users[i];
+            document.getElementById('editIndex').value = i;
+            document.getElementById('u_name').value = u.user;
+            document.getElementById('u_pass').value = u.pass;
+            document.getElementById('u_status').value = u.status;
+            document.getElementById('u_expiry').value = u.expiry;
+            document.getElementById('u_device').value = u.device_id;
+            document.getElementById('modalTitle').innerText = "EDIT USER DATA";
+            document.getElementById('userModal').classList.remove('hidden');
         }
 
-        function deleteUser(index) {
-            if(confirm('Delete this user? Changes won\'t be permanent until you click SAVE ALL.')) {
-                fullData.users.splice(index, 1);
+        function saveUserLocal() {
+            const idx = document.getElementById('editIndex').value;
+            const newUser = {
+                user: document.getElementById('u_name').value,
+                pass: document.getElementById('u_pass').value,
+                status: document.getElementById('u_status').value,
+                device_id: document.getElementById('u_device').value,
+                expiry: document.getElementById('u_expiry').value
+            };
+
+            if(idx === "-1") mainData.users.unshift(newUser);
+            else mainData.users[idx] = newUser;
+
+            closeModal();
+            renderUsers();
+        }
+
+        function deleteUser(i) {
+            if(confirm("Are you sure? This user will be removed locally.")) {
+                mainData.users.splice(i, 1);
                 renderUsers();
             }
         }
 
-        function submitUserForm() {
-            const index = document.getElementById('editIndex').value;
-            const newUser = {
-                user: document.getElementById('m_user').value,
-                pass: document.getElementById('m_pass').value,
-                status: document.getElementById('m_status').value,
-                expiry: document.getElementById('m_expiry').value,
-                device_id: document.getElementById('m_device').value
-            };
+        async function saveAllToPastebin() {
+            const key = document.getElementById('apiKey').value;
+            if(!key) return alert("Please enter your Pastebin API Dev Key!");
 
-            if(index == "-1") fullData.users.unshift(newUser);
-            else fullData.users[index] = newUser;
+            // Update App Config from inputs
+            mainData.app_config.announcement = document.getElementById('conf_ann').value;
+            mainData.app_config.m_msg = document.getElementById('conf_msg').value;
+            mainData.app_config.maintenance = document.getElementById('conf_maint').value === 'true';
+            mainData.app_config.announcement_status = document.getElementById('conf_ann_status').value;
 
-            closeModal('userModal');
-            renderUsers();
-        }
+            if(!confirm("Push all changes to Pastebin?")) return;
 
-        // SAVE TO PASTEBIN (The Critical Part)
-        async function saveToPastebin() {
-            const devKey = document.getElementById('apiKey').value;
-            if(!devKey) return alert("Enter your Pastebin API Dev Key first!");
+            showLoading(true);
 
-            if(!confirm("Are you sure? This will update the online JSON file!")) return;
-
-            toggleLoader(true);
-
-            // Pastebin API logic
             const formData = new URLSearchParams();
-            formData.append('api_dev_key', devKey);
-            formData.append('api_option', 'paste'); // Creating new paste is easier for real-time
-            formData.append('api_paste_code', JSON.stringify(fullData, null, 2));
-            formData.append('api_paste_name', 'DarkS360_Config_Update');
+            formData.append('api_dev_key', key);
+            formData.append('api_option', 'paste');
+            formData.append('api_paste_code', JSON.stringify(mainData, null, 2));
+            formData.append('api_paste_name', 'DARK_S360_UPDATE');
             formData.append('api_paste_format', 'json');
-            formData.append('api_paste_private', '0'); // Public
+            formData.append('api_paste_private', '0');
 
             try {
-                // Using a proxy to bypass CORS
-                const response = await fetch('https://cors-anywhere.herokuapp.com/https://pastebin.com/api/api_post.php', {
+                // Using CORS proxy to bypass Pastebin's security
+                const res = await fetch('https://cors-anywhere.herokuapp.com/https://pastebin.com/api/api_post.php', {
                     method: 'POST',
                     body: formData,
                     headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
                 });
 
-                const result = await response.text();
-                
-                if(result.includes('https://pastebin.com/')) {
+                const result = await res.text();
+                if(result.includes('pastebin.com/')) {
                     const newId = result.split('/').pop();
-                    alert("✅ SUCCESS!\nNew Paste ID: " + newId + "\nUpdate your App/Script with this ID.");
+                    alert("✅ DATA UPDATED SUCCESSFULLY!\nNew Paste ID: " + newId + "\nUpdate this in your script.");
                     document.getElementById('pasteId').value = newId;
                 } else {
                     alert("❌ ERROR: " + result);
                 }
             } catch (e) {
-                alert("Connection Error. Please check if CORS Proxy is working.");
+                alert("CORS Proxy Error! Make sure you activated 'cors-anywhere' temporary access.");
             }
-            toggleLoader(false);
+            showLoading(false);
         }
 
-        function toggleLoader(show) {
-            document.getElementById('loadingOverlay').classList.toggle('hidden', !show);
+        function showLoading(show) {
+            document.getElementById('loading').classList.toggle('hidden', !show);
         }
+
+        // Initialize with your ID
+        window.onload = () => { if(confirm("Load initial data from LGU5MbB1?")) fetchData(); };
     </script>
 </body>
 </html>
